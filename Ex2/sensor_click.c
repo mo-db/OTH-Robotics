@@ -1,30 +1,71 @@
-uint32_t get_time_passed_ms(uint32_t button_press_start_ms) {
-    // return get_time() - start time
-}
+uint8_t move_button_pressed = 0;
+uint8_t turn_button_pressed = 0;
 
-int main() {
-    sensor_touch_clicked_t last_touch_state = SensorTouch_released;
-    sensor_touch_clicked_t touch_state;
-    bool touch_state_change = false;
+//uint8_t check_pressed(sensor_ports_e port) {
+//}
 
-    uint16_t button_press_counter = 0;
-    uint32_t button_press_start_ms = 0;
-    
-    SensorConfig(Port_0, SensorTouch);
+void move_button() {
+    sensor_touch_clicked_t last_button_state = SensorTouch_released;
+    sensor_touch_clicked_t button_state = SensorTouch_released;
+
     while(1) {
-       Touch_Clicked(Port_0, &touch_state);
-       if (touch_state == SensorTouch_clicked)
-          NNXT_LCD_DisplayStringAtLine(0, "Button Down");
-        else
-          NNXT_LCD_DisplayStringAtLine(0, "Button Up");
-        if (touch != last_touch) {
-            // start mesuring
-            // if time_passed > x seconds, print to screen
-            // stop mesuring or restart
-            button_press_counter++;
-            touch_sensor_pressed = true;
+        Delay(100);
+        last_button_state = button_state;
+        Touch_Clicked(Port_0, &button_state);
+        if (last_button_state == SensorTouch_released && button_state == SensorTouch_clicked) {
+            move_button_pressed = 1;
         } else {
-            touch_sensor_pressed = false;
+            move_button_pressed = 0;
         }
     }
+}
+
+void turn_button() {
+    sensor_touch_clicked_t last_button_state = SensorTouch_released;
+    sensor_touch_clicked_t button_state = SensorTouch_released;
+
+    while(1) {
+        Delay(100);
+        last_button_state = button_state;
+        Touch_Clicked(Port_3, &button_state);
+        if (last_button_state == SensorTouch_released && button_state == SensorTouch_clicked) {
+            turn_button_pressed = 1;
+        } else {
+            turn_button_pressed = 0;
+        }
+    }
+
+}
+
+void do_action() {
+    MotorPortInit(Port_A);
+    MotorPortInit(Port_B);
+    motor_dir_t motorDir = Motor_dir_forward;
+
+
+    while(1) {
+        if (move_button_pressed) {
+
+        } else if (turn_button_pressed) {
+            if (motorDir == Motor_dir_backward) {
+                motorDir = Motor_dir_forward;
+            } else {
+                motorDir = Motor_dir_backward;
+            }
+
+        }
+    }
+}
+
+
+int main() {
+    SensorConfig(Port_0, SensorTouch);
+    SensorConfig(Port_3, SensorTouch);
+
+    CreateAndStartTask(move_button);
+    CreateAndStartTask(turn_button);
+
+    StartScheduler();
+
+    return 0;
 }
